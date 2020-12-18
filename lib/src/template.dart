@@ -12,7 +12,9 @@ class TemplateItemIgnore extends TemplateItem {
   TemplateItemIgnore(this.propertyName, this.enumerations);
 
   final String propertyName;
-  final Map<String, String>? enumerations;
+
+  /// Optional enumerations
+  final Map<String, String> enumerations;
 }
 
 //################################################################
@@ -23,7 +25,8 @@ class TemplateItemScalar extends TemplateItem {
 
   final String propertyName;
 
-  final Map<String, String>? enumerations;
+  /// Optional enumerations
+  final Map<String, String> enumerations;
 
   final String displayText;
 }
@@ -47,6 +50,9 @@ class TemplateException implements Exception {
 
   final int lineNum;
   final String message;
+
+  @override
+  String toString() => 'line $lineNum: $message';
 }
 
 //################################################################
@@ -99,19 +105,20 @@ class RecordTemplate {
     // - column name
     // - label
     // - enumeration
+    // - notes
 
     // Extract template items from all the other rows
 
-    String? groupLabel;
-    List<TemplateItemScalar>? groupItems;
+    String groupLabel;
+    List<TemplateItemScalar> groupItems;
 
     var lineNum = 1;
     for (final row in data.getRange(1, data.length)) {
       lineNum++;
 
-      final displayText = row[0];
-      final propertyName = row[1];
-      final enumStr = row[2];
+      final displayText = (row.isNotEmpty) ? row[0].trim() : '';
+      final propertyName = (row.length >= 2) ? row[1].trim() : '';
+      final enumStr = (row.length >= 3) ? row[2].trim() : '';
       // 4th column is for comments
 
       if (4 < row.length) {
@@ -120,7 +127,9 @@ class RecordTemplate {
 
       final enumerations = _parseEnum(lineNum, enumStr);
 
-      if (propertyName == '#TITLE') {
+      if (displayText.startsWith('##')) {
+        // commented row: ignore
+      } else if (propertyName == '#TITLE') {
         title = displayText;
       } else if (propertyName == '#SUBTITLE') {
         subtitle = displayText;
@@ -143,7 +152,7 @@ class RecordTemplate {
       } else if (propertyName.isNotEmpty || displayText.isNotEmpty) {
         if (groupItems == null) {
           if (propertyName.isNotEmpty) {
-            // Simple item
+            // Singular item
 
             final item =
                 TemplateItemScalar(propertyName, displayText, enumerations);
@@ -213,7 +222,7 @@ class RecordTemplate {
 
   //================================================================
 
-  Map<String, String>? _parseEnum(int lineNum, String str) {
+  Map<String, String> _parseEnum(int lineNum, String str) {
     final result = <String, String>{};
 
     for (final pair

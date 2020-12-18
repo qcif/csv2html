@@ -11,6 +11,9 @@ class CsvDataException implements Exception {
 
   /// Description of the problem.
   final String message;
+
+  @override
+  String toString() => 'line $lineNum: $message';
 }
 
 //################################################################
@@ -99,14 +102,19 @@ class CsvData {
       lineNum++;
 
       final record = Record(lineNum);
+      var hasValue = false;
 
       // Assign fields to property values
 
       var index = 0;
 
       while (index < row.length && index < propertyNames.length) {
-        record[propertyNames[index]] = row[index].trim();
+        final value = row[index].trim();
+
+        record[propertyNames[index]] = value;
         index++;
+
+        hasValue |= value.isNotEmpty;
       }
 
       // If there are extra fields, they must all be blank
@@ -119,12 +127,12 @@ class CsvData {
         index++;
       }
 
-      records.add(record);
+      // Only include the record if it has some value(s) in it.
+      // That is, ignore rows where all the fields are blank (e.g. blank lines)
 
-      /* Do we want to ignore totally empty records?
-        if (row.any((v) => v.trim().isNotEmpty)) {
-          records.add(record);
-      } */
+      if (hasValue) {
+        records.add(record);
+      }
     }
 
     // Create the object

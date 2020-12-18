@@ -19,6 +19,10 @@ class NoEnumeration {
 
   final String propertyName;
   final String value;
+
+  @override
+  String toString() =>
+      'Property "$propertyName" enumeration missing value for "$value"';
 }
 
 //################################################################
@@ -69,7 +73,7 @@ class Formatter {
   /// timestamp to display.
 
   List<NoEnumeration> toHtml(CsvData data, String defaultTitle, IOSink buf,
-      {DateTime? timestamp}) {
+      {DateTime timestamp}) {
     final propertyId = _checkProperties(data);
 
     data.sort(_template.sortProperties); // sort the records
@@ -95,7 +99,7 @@ class Formatter {
       }
     }
 
-    _showFooter(timestamp, buf);
+    _showFooter( buf, timestamp: timestamp);
 
     return warnings;
   }
@@ -392,14 +396,14 @@ p.timestamp {
   void _value(
       String propertyName,
       String value,
-      Map<String, String>? enumerations,
+      Map<String, String> enumerations,
       IOSink buf,
       List<NoEnumeration> warnings) {
     var displayValue = value;
-    String? title;
+    String title;
     if (enumerations != null && value.isNotEmpty) {
       if (enumerations.containsKey(value)) {
-        displayValue = enumerations[value]!;
+        displayValue = enumerations[value];
         title = value;
       } else {
         warnings.add(NoEnumeration(propertyName, value));
@@ -437,15 +441,18 @@ p.timestamp {
           buf.write('</span>');
         }
 
-        var displayValue = value;
-        if (member.enumerations != null) {
-          if (member.enumerations!.containsKey(value)) {
-            displayValue = member.enumerations![value]!;
-            buf.write('<span>${hText(displayValue)}</span>: ');
-          }
-        }
+        if (member.enumerations == null) {
+          // No enumeration
+          buf.write('<span>${hText(value)}</span><br>\n');
+        } else {
+          // Enumeration
+          final displayValue = (member.enumerations.containsKey(value))
+              ? member.enumerations[value]
+              : value;
 
-        buf.write('<span>${hText(displayValue)}</span><br>\n');
+          buf.write('<span title="${hAttr(value)}">'
+              '${hText(displayValue)}</span><br>\n');
+        }
       }
     }
 
@@ -483,7 +490,7 @@ p.timestamp {
 
     for (final propertyName in records.propertyNames) {
       if (!usedColumns.contains(propertyName)) {
-        final id = propertyId[propertyName]!;
+        final id = propertyId[propertyName];
         buf.write('<h3 id="${hAttr(id)}" class="unexpected">'
             '${hText(propertyName)}</h3>\n<table>\n');
 
@@ -511,7 +518,7 @@ p.timestamp {
       IOSink buf,
       Set<String> usedColumns,
       List<NoEnumeration> warnings) {
-    final id = propertyId[item.propertyName]!;
+    final id = propertyId[item.propertyName];
     buf.write('<div class="property">\n'
         '</div><h3 id="${hAttr(id)}">${hText(item.propertyName)}</h3>\n');
 
@@ -554,7 +561,7 @@ p.timestamp {
       IOSink buf,
       Set<String> usedColumns,
       List<NoEnumeration> warnings) {
-    final id = propertyId[item.propertyName]!;
+    final id = propertyId[item.propertyName];
     buf.write('<div class="property">\n'
         '<h3 id="${hAttr(id)}" class="unused">${hText(item.propertyName)}</h3>\n');
 
@@ -582,7 +589,7 @@ p.timestamp {
 
       buf.write('\n<div class="index"><h2>Index</h2>\n<ol>\n');
       for (final v in orderedPropertyNames) {
-        final id = propertyId[v]!;
+        final id = propertyId[v];
         buf.write('<li><a href="#${hAttr(id)}">${hText(v)}</a></li>\n');
       }
       buf.write('</ol>\n</div>\n\n');
@@ -591,7 +598,7 @@ p.timestamp {
 
   //----------------------------------------------------------------
 
-  void _showFooter(DateTime? timestamp, IOSink buf) {
+  void _showFooter(IOSink buf, {DateTime timestamp}) {
     // Visible footer
 
     buf.write('<footer>\n');

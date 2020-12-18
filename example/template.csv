@@ -1,0 +1,22 @@
+Display text,  Property name,   Enumeration, Notes
+
+Example Address book, #TITLE
+Using the example csv2html template, #SUBTITLE
+
+#SORT,          surname
+#SORT,          givenname
+
+#IDENTIFIER,    displayname
+
+Name,           displayname
+Given name,     givenname
+Family name,    surname
+
+Address,
+Street,         street
+City,           city
+State,          state,	NJ=New Jersey; NY=New York; CA=California
+
+Side,		race,    r=Red; b=Black
+
+#UNUSED,        id

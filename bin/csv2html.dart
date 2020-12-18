@@ -57,7 +57,8 @@ class Config {
             defaultsTo: true)
         ..addFlag(_oParamVersion,
             help: 'display version information and exit', negatable: false)
-        ..addFlag(_oParamQuiet, help: 'do not show warnings', negatable: false)
+        ..addFlag(_oParamQuiet,
+            abbr: 'q', help: 'do not show warnings', negatable: false)
         ..addFlag(_oParamHelp,
             abbr: 'h', help: 'display this help and exit', negatable: false);
 
@@ -128,11 +129,11 @@ class Config {
   //----------------------------------------------------------------
 
   Config._(this.dataFilename, this.templateFilename, this.outFilename,
-      {required this.includeRecords,
-      required this.includeRecordsContents,
-      required this.includeProperties,
-      required this.includePropertiesIndex,
-      required this.quiet});
+      { this.includeRecords,
+       this.includeRecordsContents,
+       this.includeProperties,
+       this.includePropertiesIndex,
+       this.quiet});
 
   //================================================================
   // Members
@@ -141,10 +142,10 @@ class Config {
   final String dataFilename;
 
   /// Optional template filename
-  final String? templateFilename;
+  final String templateFilename;
 
   /// Optional output filename
-  final String? outFilename;
+  final String outFilename;
 
   final bool includeRecords;
 
