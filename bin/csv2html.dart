@@ -12,7 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:csv2html/csv_data.dart';
 
 final _name = 'csv2html';
-final _version = '1.0.0';
+final _version = '2.0.0';
 
 //################################################################
 /// Configuration
@@ -29,11 +29,6 @@ class Config {
       const _oParamTemplate = 'template';
       const _oParamOutput = 'output';
 
-      const _oParamIncludeRecords = 'records';
-      const _oParamIncludeRecordsContents = 'contents';
-      const _oParamIncludeProperties = 'properties';
-      const _oParamIncludePropertiesIndex = 'index';
-
       const _oParamQuiet = 'quiet';
       const _oParamVersion = 'version';
       const _oParamHelp = 'help';
@@ -43,18 +38,6 @@ class Config {
             abbr: 't', help: 'template', valueHelp: 'FILE')
         ..addOption(_oParamOutput,
             abbr: 'o', help: 'output file', valueHelp: 'FILE')
-        ..addFlag(_oParamIncludeRecords,
-            help: 'include records', negatable: true, defaultsTo: true)
-        ..addFlag(_oParamIncludeRecordsContents,
-            help: 'include contents of records',
-            negatable: true,
-            defaultsTo: true)
-        ..addFlag(_oParamIncludeProperties,
-            help: 'include properties', negatable: true, defaultsTo: true)
-        ..addFlag(_oParamIncludePropertiesIndex,
-            help: 'include index of properties',
-            negatable: true,
-            defaultsTo: true)
         ..addFlag(_oParamVersion,
             help: 'display version information and exit', negatable: false)
         ..addFlag(_oParamQuiet,
@@ -75,18 +58,6 @@ class Config {
         stdout.write('$_name $_version\n');
         exit(0);
       }
-
-      // ignore: avoid_as
-      final incRecords = results[_oParamIncludeRecords] as bool;
-
-      // ignore: avoid_as
-      final incRecordsContents = results[_oParamIncludeRecordsContents] as bool;
-
-      // ignore: avoid_as
-      final incProperties = results[_oParamIncludeProperties] as bool;
-
-      // ignore: avoid_as
-      final incPropertiesIndex = results[_oParamIncludePropertiesIndex] as bool;
 
       // ignore: avoid_as
       final quiet = results[_oParamQuiet] as bool;
@@ -114,12 +85,7 @@ class Config {
 
       // Title
 
-      return Config._(dataFilename, templateFilename, outFile,
-          includeRecords: incRecords,
-          includeRecordsContents: incRecordsContents,
-          includeProperties: incProperties,
-          includePropertiesIndex: incPropertiesIndex,
-          quiet: quiet);
+      return Config._(dataFilename, templateFilename, outFile, quiet: quiet);
     } on FormatException catch (e) {
       stderr.write('$_name: usage error: ${e.message}\n');
       exit(2);
@@ -129,11 +95,7 @@ class Config {
   //----------------------------------------------------------------
 
   Config._(this.dataFilename, this.templateFilename, this.outFilename,
-      { this.includeRecords,
-       this.includeRecordsContents,
-       this.includeProperties,
-       this.includePropertiesIndex,
-       this.quiet});
+      {this.quiet});
 
   //================================================================
   // Members
@@ -146,14 +108,6 @@ class Config {
 
   /// Optional output filename
   final String outFilename;
-
-  final bool includeRecords;
-
-  final bool includeRecordsContents;
-
-  final bool includeProperties;
-
-  final bool includePropertiesIndex;
 
   /// Quiet mode
   final bool quiet;
@@ -190,11 +144,7 @@ void main(List<String> arguments) {
 
     // Process
 
-    final fmt = Formatter(template,
-        includeRecords: config.includeRecords,
-        includeRecordsContents: config.includeRecordsContents,
-        includeProperties: config.includeProperties,
-        includePropertiesIndex: config.includePropertiesIndex);
+    final fmt = Formatter(template);
 
     final warnings = fmt.toHtml(data, defaultTitle, out,
         timestamp: File(config.dataFilename).lastModifiedSync());

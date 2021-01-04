@@ -63,9 +63,14 @@ class CsvData {
     final data = CsvToListConverter(eol: eol, shouldParseNumbers: false)
         .convert(csvText);
 
-    // Extract property names from the header row
-
     final propertyNames = <String>[];
+    final records = <Record>[];
+
+    if (data.isEmpty) {
+      throw CsvDataException(1, 'missing header row');
+    }
+
+    // Extract property names from the header row
 
     var column = 0;
     for (final name in data.first.map((s) => s.trim())) {
@@ -78,7 +83,8 @@ class CsvData {
           throw CsvDataException(1, 'column $column: blank property name');
         }
       } else {
-        throw CsvDataException(1, 'column $column: property name not string');
+        // This should never happen
+        assert(false, 'property name is not a string');
       }
     }
 
@@ -94,8 +100,6 @@ class CsvData {
     }
 
     // Extract records from all the other rows
-
-    final records = <Record>[];
 
     var lineNum = 1; // skipping header row
     for (final row in data.getRange(1, data.length)) {
@@ -120,7 +124,7 @@ class CsvData {
       // If there are extra fields, they must all be blank
 
       while (index < row.length) {
-        if (row[index].trim.isNotEmpty) {
+        if (row[index].trim().isNotEmpty) {
           throw CsvDataException(
               lineNum, 'column ${index + 1}: more fields than properties');
         }

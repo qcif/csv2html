@@ -30,29 +30,9 @@ class NoEnumeration {
 class Formatter {
   //================================================================
 
-  Formatter(this._template,
-      {this.includeRecords = true,
-      this.includeRecordsContents = true,
-      this.includeProperties = true,
-      this.includePropertiesIndex = true});
+  Formatter(this._template);
 
   //================================================================
-
-  /// Show the records (and maybe the table of contents).
-
-  final bool includeRecords;
-
-  /// Show the table of contents (only if [includeRecords] is also true).
-
-  final bool includeRecordsContents;
-
-  /// Show the properties (and maybe the index of properties).
-
-  final bool includeProperties;
-
-  /// Show the index of properties (only if [includeProperties] is also true).
-
-  final bool includePropertiesIndex;
 
   /// The template to interpret the CSV data.
 
@@ -84,22 +64,22 @@ class Formatter {
 
     _showHead(buf, defaultTitle);
 
-    if (includeRecords) {
-      if (includeRecordsContents) {
+    if (_template.showRecords) {
+      if (_template.showRecordsContents) {
         _showRecordContents(data, buf);
       }
 
       _showRecords(data, propertyId, buf, warnings);
     }
 
-    if (includeProperties) {
+    if (_template.showProperties) {
       _showProperties(data, propertyId, buf, warnings);
-      if (includePropertiesIndex) {
+      if (_template.showPropertiesIndex) {
         _propertiesIndex(data, propertyId, buf);
       }
     }
 
-    _showFooter( buf, timestamp: timestamp);
+    _showFooter(buf, timestamp: timestamp);
 
     return warnings;
   }
@@ -294,7 +274,7 @@ p.timestamp {
       final valueHtml = (value.isNotEmpty) ? hText(value) : '&mdash;';
 
       buf.write('<th>');
-      if (includeRecords) {
+      if (_template.showRecords) {
         buf.write('<a href="#${record.identifier}">$valueHtml</a></th>\n');
       } else {
         buf.write(valueHtml);
@@ -379,7 +359,7 @@ p.timestamp {
 
       buf.write('<tr><th>');
 
-      if (includeProperties) {
+      if (_template.showProperties) {
         final id = propertyId[item.propertyName];
         buf.write('<a href="#$id">${hText(item.displayText)}</a>');
       } else {
@@ -431,7 +411,7 @@ p.timestamp {
         if (member.displayText.isNotEmpty) {
           buf.write('<span class="gp">');
 
-          if (includeProperties) {
+          if (_template.showProperties) {
             final id = propertyId[member.propertyName];
             buf.write('<a href="#$id">${hText(member.displayText)}</a>');
           } else {
@@ -582,7 +562,7 @@ p.timestamp {
 
   void _propertiesIndex(
       CsvData data, Map<String, String> propertyId, IOSink buf) {
-    if (includePropertiesIndex) {
+    if (_template.showPropertiesIndex) {
       // Property index
 
       final orderedPropertyNames = data.propertyNames.toList()..sort();

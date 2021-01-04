@@ -111,71 +111,68 @@ class RecordTemplate {
 
     String groupLabel;
     List<TemplateItemScalar> groupItems;
-
     var lineNum = 1;
-    for (final row in data.getRange(1, data.length)) {
-      lineNum++;
 
-      final displayText = (row.isNotEmpty) ? row[0].trim() : '';
-      final propertyName = (row.length >= 2) ? row[1].trim() : '';
-      final enumStr = (row.length >= 3) ? row[2].trim() : '';
-      // 4th column is for comments
+    if (1 < data.length) {
+      for (final row in data.getRange(1, data.length)) {
+        lineNum++;
 
-      if (4 < row.length) {
-        throw TemplateException(lineNum, 'too many fields in row $lineNum');
-      }
+        final displayText = (row.isNotEmpty) ? row[0].trim() : '';
+        final propertyName = (row.length >= 2) ? row[1].trim() : '';
+        final enumStr = (row.length >= 3) ? row[2].trim() : '';
+        // 4th column is for comments
 
-      final enumerations = _parseEnum(lineNum, enumStr);
-
-      if (displayText.startsWith('##')) {
-        // commented row: ignore
-      } else if (propertyName == '#TITLE') {
-        title = displayText;
-      } else if (propertyName == '#SUBTITLE') {
-        subtitle = displayText;
-      } else if (displayText == '#UNUSED') {
-        items.add(TemplateItemIgnore(propertyName, enumerations));
-      } else if (displayText == '#SORT') {
-        if (sortProperties.contains(propertyName)) {
-          throw TemplateException(
-              lineNum, 'duplicate sort property: $propertyName');
+        if (4 < row.length) {
+          throw TemplateException(lineNum, 'too many fields in row');
         }
-        sortProperties.add(propertyName);
-      } else if (displayText == '#IDENTIFIER') {
-        identifierProperties.add(propertyName);
-      } else if (displayText.startsWith('#')) {
-        throw TemplateException(
-            lineNum, 'Unexpected display text: $displayText');
-      } else if (propertyName.startsWith('#')) {
-        throw TemplateException(
-            lineNum, 'Unexpected property name: $propertyName');
-      } else if (propertyName.isNotEmpty || displayText.isNotEmpty) {
-        if (groupItems == null) {
-          if (propertyName.isNotEmpty) {
-            // Singular item
 
+        final enumerations = _parseEnum(lineNum, enumStr);
+
+        if (displayText.startsWith('#')) {
+          // Comment row: ignore
+
+          if (displayText == '#TITLE' || displayText == '#UNUSED') {
+            throw TemplateException(
+                lineNum, 'old template syntax: change #COMMAND to _COMMAND');
+          }
+        } else if (displayText.startsWith('_')) {
+          // Command row
+          _processCommand(lineNum, displayText, propertyName, enumerations);
+        } else if (propertyName.isNotEmpty || displayText.isNotEmpty) {
+          // Template entry row
+
+          if (groupItems == null) {
+            if (propertyName.isNotEmpty) {
+              // Singular item
+
+              final item =
+                  TemplateItemScalar(propertyName, displayText, enumerations);
+
+              items.add(item);
+            } else {
+              // Start of group
+              groupLabel = displayText;
+              groupItems = [];
+            }
+          } else {
+            // Add to group
             final item =
                 TemplateItemScalar(propertyName, displayText, enumerations);
-
-            items.add(item);
-          } else {
-            // Start of group
-            groupLabel = displayText;
-            groupItems = [];
+            groupItems.add(item);
           }
         } else {
-          // Add to group
-          final item =
-              TemplateItemScalar(propertyName, displayText, enumerations);
-          groupItems.add(item);
-        }
-      } else {
-        // Blank line
-        if (groupItems != null) {
-          // Complete the group
-          items.add(
-              TemplateItemGroup(groupLabel ?? 'Unnamed group', groupItems));
-          groupItems = null;
+          // Blank row
+
+          if (enumerations != null) {
+            throw TemplateException(lineNum, 'enumeration without property');
+          }
+
+          if (groupItems != null) {
+            // Complete the group
+            items.add(
+                TemplateItemGroup(groupLabel ?? 'Unnamed group', groupItems));
+            groupItems = null;
+          }
         }
       }
     }
@@ -207,6 +204,65 @@ class RecordTemplate {
     }
   }
 
+  //----------------
+
+  void _processCommand(int lineNum, String command, String param,
+      Map<String, String> enumerations) {
+    if (command == '_TITLE') {
+      title = param;
+    } else if (command == '_SUBTITLE') {
+      subtitle = param;
+    } else if (command == '_UNUSED') {
+      items.add(TemplateItemIgnore(param, enumerations));
+    } else if (command == '_SORT') {
+      if (sortProperties.contains(param)) {
+        throw TemplateException(lineNum, 'duplicate sort property: $param');
+      }
+      sortProperties.add(param);
+    } else if (command == '_IDENTIFIER') {
+      identifierProperties.add(param);
+    } else if (command == '_SHOW') {
+      _processCommandShow(lineNum, command, param);
+    } else {
+      throw TemplateException(lineNum, 'unknown command: $command');
+    }
+  }
+
+  //----------------
+
+  void _processCommandShow(int lineNum, String command, String param) {
+    showRecords = false;
+    showRecordsContents = false;
+    showProperties = false;
+    showPropertiesIndex = false;
+
+    for (final v in param.split(';')) {
+      switch (v.trim()) {
+        case 'records':
+          showRecords = true;
+          break;
+        case 'contents':
+          showRecordsContents = true;
+          break;
+        case 'properties':
+          showProperties = true;
+          break;
+        case 'index':
+          showPropertiesIndex = true;
+          break;
+        case 'all':
+          showRecords = true;
+          showRecordsContents = true;
+          showProperties = true;
+          showPropertiesIndex = true;
+          break;
+
+        default:
+          throw TemplateException(lineNum, 'unknown value in _SHOW: $param');
+      }
+    }
+  }
+
   //================================================================
   // Members
 
@@ -219,6 +275,22 @@ class RecordTemplate {
   final List<String> identifierProperties = [];
 
   final List<TemplateItem> items = [];
+
+  /// Show the records (and maybe the table of contents).
+
+  bool showRecords = true;
+
+  /// Show the table of contents (only if [showRecords] is also true).
+
+  bool showRecordsContents = true;
+
+  /// Show the properties (and maybe the index of properties).
+
+  bool showProperties = true;
+
+  /// Show the index of properties (only if [showProperties] is also true).
+
+  bool showPropertiesIndex = true;
 
   //================================================================
 

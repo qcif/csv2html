@@ -1,12 +1,12 @@
 Display text,  Property name,   Enumeration, Notes
 
-Example Address book, #TITLE
-Using the example csv2html template, #SUBTITLE
+_TITLE,		Example Address book
+_SUBTITLE,	Using the example csv2html template
 
-#SORT,          surname
-#SORT,          givenname
+_SORT,          surname
+_SORT,          givenname
 
-#IDENTIFIER,    displayname
+_IDENTIFIER,    displayname
 
 Name,           displayname
 Given name,     givenname
@@ -19,4 +19,4 @@ State,          state,	NJ=New Jersey; NY=New York; CA=California
 
 Side,		race,    r=Red; b=Black
 
-#UNUSED,        id
+_UNUSED,        id
