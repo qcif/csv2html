@@ -59,9 +59,15 @@ class CsvData {
   //----------------------------------------------------------------
   /// Parses the [text] as Comma Separated Variables (CSV) data.
 
-  factory CsvData.load(String csvText, {String eol = '\n'}) {
-    final data = CsvToListConverter(eol: eol, shouldParseNumbers: false)
-        .convert(csvText);
+  factory CsvData.load(String csvText) {
+    // Parse the CSV
+    //
+    // CSV package's detection of eol is unreliable, so do our own handling
+    // of CR-LF and treat everything as LF.
+
+    final data = CsvToListConverter(
+            eol: '\n', shouldParseNumbers: false, allowInvalid: false)
+        .convert(csvText.replaceAll('\r\n', '\n'));
 
     final propertyNames = <String>[];
     final records = <Record>[];

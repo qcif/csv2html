@@ -680,6 +680,8 @@ p.timestamp {
 </html>
 
 <!--
+generator: csv2html <https://github.com/qcif/csv2html>
+generated: ${hText(DateTime.now().toUtc().toIso8601String())}
 ''');
 
     // Hidden timestamps
@@ -688,10 +690,7 @@ p.timestamp {
       buf.write('timestamp: ${hText(timestamp.toUtc().toIso8601String())}\n');
     }
 
-    buf.write('''
-generated: ${hText(DateTime.now().toUtc().toIso8601String())}
--->
-''');
+    buf.write('-->\n');
   }
 
   //================================================================

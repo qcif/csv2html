@@ -118,15 +118,18 @@ class RecordTemplate {
   }
 
   //----------------------------------------------------------------
-  /// Create a template by loading it from a file.
+  /// Create a template by parsing the CSV representation of it.
 
-  RecordTemplate.load(String specification) {
+  RecordTemplate.load(String templateCsv) {
     try {
       // Parse specification as CSV
 
+      // CSV package's detection of eol is unreliable, so do our own handling
+      // of CR-LF and treat everything as LF.
+
       final data = CsvToListConverter(
               eol: '\n', shouldParseNumbers: false, allowInvalid: false)
-          .convert(specification);
+          .convert(templateCsv.replaceAll('\r\n', '\n'));
 
       // Ignore header row
       // - column name
