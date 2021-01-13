@@ -8,7 +8,8 @@ class PropertyNotInDataException implements Exception {
   final String propertyName;
 
   @override
-  String toString() => 'Property in template, but not in data: $propertyName';
+  String toString() =>
+      'property from template is not in the data: $propertyName';
 }
 
 //################################################################
@@ -27,16 +28,56 @@ class NoEnumeration {
 
 //################################################################
 
+enum PropertyState { usedInRecord, other, hidden }
+
+const _cssClassNormalProperty = 'normal-property';
+const _cssClassOtherProperty = 'other-property';
+const _cssClassHiddenProperty = 'hidden-property';
+const _cssClassUnexpectedProperty = 'unexpected-property';
+
+const stateClass = {
+  PropertyState.usedInRecord: _cssClassNormalProperty,
+  PropertyState.other: _cssClassOtherProperty,
+  PropertyState.hidden: _cssClassHiddenProperty
+};
+
+//################################################################
+
+class _PropInfo {
+  Map<String, PropertyState> useStates = {};
+  Map<String, bool> hasSummary = {};
+}
+
+//################################################################
+
 class Formatter {
   //================================================================
 
-  Formatter(this._template);
+  Formatter(this._template,
+      {this.excludeOther = false, this.includeHidden = false});
 
   //================================================================
 
   /// The template to interpret the CSV data.
 
   final RecordTemplate _template;
+
+  /// Exclude other properties.
+  ///
+  /// The properties marked as _OTHER are not a part of the records, but they
+  /// are normally included in the property section. If this member is true,
+  /// they are excluded (i.e. they behave similar to _HIDE).
+
+  final bool excludeOther;
+
+  /// Include hidden properties.
+  ///
+  /// The properties marked as _HIDE are not a part of the records, and they
+  /// are normally not included in the property section. If this member is true,
+  /// they are included in the property section (i.e. they behave similar to
+  /// _OTHER).
+
+  final bool includeHidden;
 
   //================================================================
 
@@ -54,7 +95,7 @@ class Formatter {
 
   List<NoEnumeration> toHtml(CsvData data, String defaultTitle, IOSink buf,
       {DateTime timestamp}) {
-    final propertyId = _checkProperties(data);
+    final propertyIds = _generatePropertyIds(data);
 
     data.sort(_template.sortProperties); // sort the records
 
@@ -68,14 +109,14 @@ class Formatter {
       if (_template.showRecordsContents) {
         _showRecordContents(data, buf);
       }
-
-      _showRecords(data, propertyId, buf, warnings);
+      _showRecords(data, propertyIds, buf, warnings);
     }
 
     if (_template.showProperties) {
-      _showProperties(data, propertyId, buf, warnings);
+      final propInfo = _showProperties(data, propertyIds, buf, warnings);
+
       if (_template.showPropertiesIndex) {
-        _propertiesIndex(data, propertyId, buf);
+        _propertiesIndex(data, propertyIds, propInfo, buf);
       }
     }
 
@@ -95,7 +136,7 @@ class Formatter {
   ///
   /// The IDs will be used as fragment identifiers in the HTML.
 
-  Map<String, String> _checkProperties(CsvData data) {
+  Map<String, String> _generatePropertyIds(CsvData data) {
     // Assign identifiers to each property name
 
     final propertyId = <String, String>{};
@@ -108,7 +149,7 @@ class Formatter {
     // Check all template items refer to properties that exist in the data
 
     for (final item in _template.items) {
-      if (item is TemplateItemScalar) {
+      if (item is TemplateItemPropertyBase) {
         if (!propertyId.containsKey(item.propertyName)) {
           throw PropertyNotInDataException(item.propertyName);
         }
@@ -117,10 +158,6 @@ class Formatter {
           if (!propertyId.containsKey(m.propertyName)) {
             throw PropertyNotInDataException(m.propertyName);
           }
-        }
-      } else if (item is TemplateItemIgnore) {
-        if (!propertyId.containsKey(item.propertyName)) {
-          throw PropertyNotInDataException(item.propertyName);
         }
       } else {
         assert(false, 'unexpected class: ${item.runtimeType}');
@@ -131,7 +168,7 @@ class Formatter {
 
     for (final name in _template.sortProperties) {
       if (!data.propertyNames.contains(name)) {
-        TemplateException(0, 'sort property not in data: $name');
+        TemplateException('sort property not in data: $name');
       }
     }
 
@@ -139,7 +176,7 @@ class Formatter {
 
     for (final name in _template.identifierProperties) {
       if (!data.propertyNames.contains(name)) {
-        TemplateException(0, 'identifier property not in data: $name');
+        TemplateException('identifier property not in data: $name');
       }
     }
 
@@ -202,6 +239,19 @@ span.gp {
 }
 span.gp::after { content: ": " }
 
+div.other > h3:after {
+  content: " (other property)";
+  color: green;
+}
+div.hide > h3:after {
+  content: " (hidden property)";
+  color: orange;
+}
+div.unexpected > h3:after {
+  content: " (unexpected property)";
+  color: red;
+}
+
 .properties table {
   border-collapse: collapse;
 }
@@ -209,8 +259,6 @@ span.gp::after { content: ": " }
   background: #eee;
 }
 h3.unused::before { content: 'Unused property: ' }
-
-h3.unexpected::before { content: 'Property not in template: ' }
 
 th {
   white-space: nowrap;
@@ -220,6 +268,24 @@ th {
   font-weight: normal;
   color: #666;
 }
+
+/* Property summaries */
+
+div.property > h3 {}
+div.$_cssClassNormalProperty > h3 {}
+div.$_cssClassOtherProperty > h3::after { content: " (not used in records)"; color: green; }
+div.$_cssClassHiddenProperty > h3::after { content: " (hidden)"; color: orange; }
+div.$_cssClassUnexpectedProperty > h3::after { content: " (not in template)"; color: red; }
+
+/* Property index */
+
+li.property {}
+li.$_cssClassNormalProperty {}
+li.$_cssClassOtherProperty { color: gray; }
+li.$_cssClassHiddenProperty { color: orange; }
+li.$_cssClassUnexpectedProperty { color: red; }
+
+/* Footer */
 
 p.timestamp {
   margin: 4ex 0;
@@ -336,7 +402,7 @@ p.timestamp {
         _showRecordSingular(item, record, propertyId, buf, warnings);
       } else if (item is TemplateItemGroup) {
         _showRecordGroup(item, record, propertyId, buf);
-      } else if (item is TemplateItemIgnore) {
+      } else if (item is TemplateItemHide) {
         // ignore
       }
     }
@@ -400,40 +466,43 @@ p.timestamp {
     var started = false;
 
     for (final member in item.members) {
-      final value = entry[member.propertyName];
+      if (member is TemplateItemScalar) {
+        // Show property in the record
+        final value = entry[member.propertyName];
 
-      if (value.isNotEmpty) {
-        if (!started) {
-          buf.write('<tr><th>${hText(item.displayText)}</th>\n<td>');
-          started = true;
-        }
-
-        if (member.displayText.isNotEmpty) {
-          buf.write('<span class="gp">');
-
-          if (_template.showProperties) {
-            final id = propertyId[member.propertyName];
-            buf.write('<a href="#$id">${hText(member.displayText)}</a>');
-          } else {
-            buf.write(hText(member.displayText));
+        if (value.isNotEmpty) {
+          if (!started) {
+            buf.write('<tr><th>${hText(item.displayText)}</th>\n<td>');
+            started = true;
           }
 
-          buf.write('</span>');
-        }
+          if (member.displayText.isNotEmpty) {
+            buf.write('<span class="gp">');
 
-        if (member.enumerations == null) {
-          // No enumeration
-          buf.write('<span>${hText(value)}</span><br>\n');
-        } else {
-          // Enumeration
-          final displayValue = (member.enumerations.containsKey(value))
-              ? member.enumerations[value]
-              : value;
+            if (_template.showProperties) {
+              final id = propertyId[member.propertyName];
+              buf.write('<a href="#$id">${hText(member.displayText)}</a>');
+            } else {
+              buf.write(hText(member.displayText));
+            }
 
-          buf.write('<span title="${hAttr(value)}">'
-              '${hText(displayValue)}</span><br>\n');
+            buf.write('</span>');
+          }
+
+          if (member.enumerations == null) {
+            // No enumeration
+            buf.write('<span>${hText(value)}</span><br>\n');
+          } else {
+            // Enumeration
+            final displayValue = (member.enumerations.containsKey(value))
+                ? member.enumerations[value]
+                : value;
+
+            buf.write('<span title="${hAttr(value)}">'
+                '${hText(displayValue)}</span><br>\n');
+          }
         }
-      }
+      } // else is other or hidden: do not show property in the record
     }
 
     if (started) {
@@ -442,137 +511,153 @@ p.timestamp {
   }
 
   //----------------------------------------------------------------
+  /// Produce the properties section.
+  ///
+  /// This shows a summary of the property values. First all the properties
+  /// in the order they appear in the template (including other and hidden
+  /// properties), and then treat any properties which were not in the template.
 
-  void _showProperties(CsvData records, Map<String, String> propertyId,
+  _PropInfo _showProperties(CsvData records, Map<String, String> propertyIds,
       IOSink buf, List<NoEnumeration> warnings) {
-    // Dump properties used in the template items
-
     buf.write('<div class="properties">\n<h2>Properties</h2>\n\n');
 
-    final usedColumns = <String>{};
+    final propInfo = _PropInfo();
+
+    List<NoEnumeration> warnings;
+
+    // Summaries for all properties mentioned in the template
 
     for (final item in _template.items) {
-      if (item is TemplateItemScalar) {
-        _propertySimple(
-            item, propertyId, records.records, buf, usedColumns, warnings);
+      if (item is TemplateItemPropertyBase) {
+        // Display the property
+
+        _propertySummaryForItem(
+            item, records, propertyIds, buf, propInfo, warnings);
       } else if (item is TemplateItemGroup) {
-        _propertyGroup(
-            item, propertyId, records.records, buf, usedColumns, warnings);
-      } else if (item is TemplateItemIgnore) {
-        _propertyUnused(
-            item, propertyId, records.records, buf, usedColumns, warnings);
+        // Display all properties in the group
+
+        for (final groupMember in item.members) {
+          _propertySummaryForItem(
+              groupMember, records, propertyIds, buf, propInfo, warnings);
+        }
       } else {
         assert(false, 'unexpected class: ${item.runtimeType}');
       }
     }
 
-    // Dump properties not in the template items
+    // Summaries for any properties not mentioned in the template
 
     for (final propertyName in records.propertyNames) {
-      if (!usedColumns.contains(propertyName)) {
-        final id = propertyId[propertyName];
-        buf.write('<h3 id="${hAttr(id)}" class="unexpected">'
-            '${hText(propertyName)}</h3>\n<table>\n');
+      if (!propInfo.useStates.containsKey(propertyName)) {
+        // Property has not been outputted (i.e. weren't referenced in template)
 
-        for (final entry in records.records) {
-          final value = entry[propertyName];
-          if (value.isNotEmpty) {
-            buf.write('<tr>');
-            _showIdentitiesInTd(entry, buf);
-            buf.write('<td>${hText(value)}</td></tr>\n');
-          }
-        }
-        buf.write('</table>\n\n');
+        _propertySummary(records, propertyIds, propertyName, null, '',
+            _cssClassUnexpectedProperty, buf, warnings);
+
+        propInfo.hasSummary[propertyName] = true;
       }
     }
 
     buf.write('</div> <!-- properties -->\n');
+
+    return propInfo;
   }
 
   //----------------
 
-  void _propertySimple(
-      TemplateItemScalar item,
-      Map<String, String> propertyId,
-      Iterable<Record> records,
+  void _propertySummaryForItem(
+      TemplateItemPropertyBase item,
+      CsvData records,
+      Map<String, String> propertyIds,
       IOSink buf,
-      Set<String> usedColumns,
+      _PropInfo propInfo,
       List<NoEnumeration> warnings) {
-    final id = propertyId[item.propertyName];
-    buf.write('<div class="property">\n'
-        '</div><h3 id="${hAttr(id)}">${hText(item.propertyName)}</h3>\n');
+    // Determine what state the property is in
 
-    buf.write('<table>\n');
+    PropertyState state;
+    bool include;
 
-    for (final entry in records) {
-      buf.write('<tr>');
-      _showIdentitiesInTd(entry, buf);
-      _value(item.propertyName, entry[item.propertyName], item.enumerations,
-          buf, warnings);
-      buf.write('</tr>\n');
+    if (item is TemplateItemScalar) {
+      state = PropertyState.usedInRecord;
+      include = true; // always include
+
+    } else if (item is TemplateItemOther) {
+      state = PropertyState.other;
+      include = !excludeOther;
+    } else {
+      state = PropertyState.hidden;
+      include = includeHidden;
+
+      assert(item is TemplateItemHide);
     }
 
-    buf.write('</table>\n'
-        '</div>\n\n');
+    propInfo.useStates[item.propertyName] = state;
 
-    usedColumns.add(item.propertyName);
-  }
-
-  //----------------
-
-  void _propertyGroup(
-      TemplateItemGroup item,
-      Map<String, String> propertyId,
-      Iterable<Record> records,
-      IOSink buf,
-      Set<String> usedColumns,
-      List<NoEnumeration> warnings) {
-    for (final member in item.members) {
-      _propertySimple(member, propertyId, records, buf, usedColumns, warnings);
+    if (include) {
+      _propertySummary(records, propertyIds, item.propertyName,
+          item.enumerations, item.notes, stateClass[state], buf, warnings);
+      propInfo.hasSummary[item.propertyName] = true;
     }
   }
 
   //----------------
 
-  void _propertyUnused(
-      TemplateItemIgnore item,
-      Map<String, String> propertyId,
-      Iterable<Record> records,
+  void _propertySummary(
+      CsvData records,
+      Map<String, String> propertyIds,
+      String propertyName,
+      Map<String, String> enumerations,
+      String notes,
+      String cssClass,
       IOSink buf,
-      Set<String> usedColumns,
       List<NoEnumeration> warnings) {
-    final id = propertyId[item.propertyName];
-    buf.write('<div class="property">\n'
-        '<h3 id="${hAttr(id)}" class="unused">${hText(item.propertyName)}</h3>\n');
+    final id = propertyIds[propertyName];
 
+    buf.write('<div class="property $cssClass">\n'
+        '<h3 id="${hAttr(id)}">${hText(propertyName)}</h3>\n');
+
+    if (notes.isNotEmpty) {
+      buf.write('<p class="notes">${hText(notes)}</p>\n');
+    }
     buf.write('<table>\n');
 
-    for (final entry in records) {
+    for (final entry in records._records) {
       buf.write('<tr>');
       _showIdentitiesInTd(entry, buf);
-      _value(item.propertyName, entry[item.propertyName], item.enumerations,
-          buf, warnings);
+      _value(propertyName, entry[propertyName], enumerations, buf, warnings);
       buf.write('</tr>\n');
     }
 
     buf.write('</table>\n</div>\n\n');
-
-    usedColumns.add(item.propertyName);
   }
 
-  void _propertiesIndex(
-      CsvData data, Map<String, String> propertyId, IOSink buf) {
+  //----------------
+
+  void _propertiesIndex(CsvData data, Map<String, String> propertyId,
+      _PropInfo propInfo, IOSink buf) {
     if (_template.showPropertiesIndex) {
       // Property index
 
+      buf.write('\n<div class="index">\n'
+          '<h2>Index</h2>\n'
+          '<ol>\n');
+
       final orderedPropertyNames = data.propertyNames.toList()..sort();
 
-      buf.write('\n<div class="index"><h2>Index</h2>\n<ol>\n');
       for (final v in orderedPropertyNames) {
-        final id = propertyId[v];
-        buf.write('<li><a href="#${hAttr(id)}">${hText(v)}</a></li>\n');
+        if (propInfo.hasSummary.containsKey(v)) {
+          // Include entry in the index
+
+          final cssClass = propInfo.useStates.containsKey(v)
+              ? stateClass[propInfo.useStates[v]]
+              : _cssClassUnexpectedProperty;
+
+          buf.write('<li class="$cssClass">'
+              '<a href="#${hAttr(propertyId[v])}">${hText(v)}</a></li>\n');
+        }
       }
-      buf.write('</ol>\n</div>\n\n');
+      buf.write('</ol>\n'
+          '</div>\n\n');
     }
   }
 

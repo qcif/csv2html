@@ -29,6 +29,9 @@ class Config {
       const _oParamTemplate = 'template';
       const _oParamOutput = 'output';
 
+      const _oParamExcludeOther = 'exclude-other';
+      const _oParamIncludeHidden = 'include-hidden';
+
       const _oParamQuiet = 'quiet';
       const _oParamVersion = 'version';
       const _oParamHelp = 'help';
@@ -38,6 +41,10 @@ class Config {
             abbr: 't', help: 'template', valueHelp: 'FILE')
         ..addOption(_oParamOutput,
             abbr: 'o', help: 'output file', valueHelp: 'FILE')
+        ..addFlag(_oParamExcludeOther,
+            abbr: 'e', help: 'exclude other properties (_OTHER)')
+        ..addFlag(_oParamIncludeHidden,
+            abbr: 'i', help: 'include hidden properties (_HIDE)')
         ..addFlag(_oParamVersion,
             help: 'display version information and exit', negatable: false)
         ..addFlag(_oParamQuiet,
@@ -62,6 +69,12 @@ class Config {
       // ignore: avoid_as
       final quiet = results[_oParamQuiet] as bool;
 
+      // ignore: avoid_as
+      final excludeOther = results[_oParamExcludeOther] as bool;
+
+      // ignore: avoid_as
+      final includeHidden = results[_oParamIncludeHidden] as bool;
+
       // Template
 
       final templateFilename = results[_oParamTemplate] as String;
@@ -85,7 +98,10 @@ class Config {
 
       // Title
 
-      return Config._(dataFilename, templateFilename, outFile, quiet: quiet);
+      return Config._(dataFilename, templateFilename, outFile,
+          excludeOther: excludeOther,
+          includeHidden: includeHidden,
+          quiet: quiet);
     } on FormatException catch (e) {
       stderr.write('$_name: usage error: ${e.message}\n');
       exit(2);
@@ -95,7 +111,7 @@ class Config {
   //----------------------------------------------------------------
 
   Config._(this.dataFilename, this.templateFilename, this.outFilename,
-      {this.quiet});
+      {this.excludeOther, this.includeHidden, this.quiet});
 
   //================================================================
   // Members
@@ -108,6 +124,12 @@ class Config {
 
   /// Optional output filename
   final String outFilename;
+
+  /// Exclude properties marked as _OTHER (normally they are included).
+  final bool excludeOther;
+
+  /// Include properties marked as _HIDE (which are normally excluded).
+  final bool includeHidden;
 
   /// Quiet mode
   final bool quiet;
@@ -144,7 +166,8 @@ void main(List<String> arguments) {
 
     // Process
 
-    final fmt = Formatter(template);
+    final fmt = Formatter(template,
+        excludeOther: config.excludeOther, includeHidden: config.includeHidden);
 
     final warnings = fmt.toHtml(data, defaultTitle, out,
         timestamp: File(config.dataFilename).lastModifiedSync());
@@ -154,7 +177,8 @@ void main(List<String> arguments) {
     if (!config.quiet) {
       final unused = template.unusedProperties(data).toList()..sort();
       for (final name in unused) {
-        stderr.write('Warning: property not in template: $name\n');
+        stderr.write(
+            'Warning: property in the data is not in the template: $name\n');
       }
 
       for (final w in warnings) {

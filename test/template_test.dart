@@ -20,7 +20,8 @@ void emptyTemplates() {
 
       test(name, () {
         try {
-          final t = RecordTemplate.load(input);
+          RecordTemplate.load(input);
+          fail('did not throw exception');
         } on TemplateException catch (e) {
           expect(e.lineNum, equals(badRow));
         }
@@ -35,7 +36,7 @@ void example() {
   group('readme example', () {
     test('readme', () {
       final d = RecordTemplate.load('''
-Display text,   Property,       Enumeration,    Notes
+# An example template
 
 _TITLE,         My Books
 _SUBTITLE,      An example
@@ -52,11 +53,11 @@ Author,         ,               ,               Start of a group
 Given name,     author_givenname
 Family name,    author_familyname
 
-ISBN,           isbn
 Publisher,      publisher_name
 Format,         format,         , hc=Hard cover;pb=Paperback
-_UNUSED,        id
-_UNUSED,        timestamp
+_OTHER,         isbn
+_OTHER,         dimensions
+_HIDE,          internal_price
 
 #
   #
@@ -82,7 +83,7 @@ _UNUSED,        timestamp
 
       // TODO: test other items
 
-      expect(d.items[7], isA<TemplateItemIgnore>());
+      expect(d.items[7], isA<TemplateItemHide>());
     });
   });
 }

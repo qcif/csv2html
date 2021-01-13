@@ -6,29 +6,54 @@ part of csv_data;
 abstract class TemplateItem {}
 
 //################################################################
-/// Item to indicate a property is to be ignored.
 
-class TemplateItemIgnore extends TemplateItem {
-  TemplateItemIgnore(this.propertyName, this.enumerations);
+class TemplateItemPropertyBase extends TemplateItem {
+  TemplateItemPropertyBase(this.propertyName, this.enumerations, this.notes);
 
+  // Name of the property
   final String propertyName;
 
   /// Optional enumerations
   final Map<String, String> enumerations;
+
+  /// Notes about the property
+  final String notes;
 }
 
 //################################################################
 /// Item to indicate a single property.
 
-class TemplateItemScalar extends TemplateItem {
-  TemplateItemScalar(this.propertyName, this.displayText, this.enumerations);
-
-  final String propertyName;
-
-  /// Optional enumerations
-  final Map<String, String> enumerations;
+class TemplateItemScalar extends TemplateItemPropertyBase {
+  TemplateItemScalar(String propertyName, this.displayText,
+      Map<String, String> enumerations, String notes)
+      : super(propertyName, enumerations, notes);
 
   final String displayText;
+}
+
+//################################################################
+/// Item to indicate a property is hidden.
+///
+/// These properties are not included in the records section, and also not
+/// normally included in the properties section. But they can be included
+/// in the properties section, if requested.
+
+class TemplateItemHide extends TemplateItemPropertyBase {
+  TemplateItemHide(
+      String propertyName, Map<String, String> enumerations, String notes)
+      : super(propertyName, enumerations, notes);
+}
+
+//################################################################
+/// Item to indicate a property is not used in the records.
+///
+/// These properties are not included in the records section, but they are
+/// included in the properties section.
+
+class TemplateItemOther extends TemplateItemPropertyBase {
+  TemplateItemOther(
+      String propertyName, Map<String, String> enumerations, String notes)
+      : super(propertyName, enumerations, notes);
 }
 
 //################################################################
@@ -39,20 +64,20 @@ class TemplateItemGroup extends TemplateItem {
 
   final String displayText;
 
-  final List<TemplateItemScalar> members;
+  final List<TemplateItemPropertyBase> members;
 }
 
 //################################################################
 /// Exception thrown when there is a problem with a template.
 
 class TemplateException implements Exception {
-  TemplateException(this.lineNum, this.message);
+  TemplateException(this.message, [this.lineNum]);
 
   final int lineNum;
   final String message;
 
   @override
-  String toString() => 'line $lineNum: $message';
+  String toString() => '${lineNum != null ? 'line $lineNum: ' : ''}$message';
 }
 
 //################################################################
@@ -63,7 +88,7 @@ class TemplateException implements Exception {
 /// The main part of a template is an ordered list of [items]. These identify
 /// individual properties [TemplateItemScalar], groups of properties
 /// [TemplateItemGroup], or properties that are to be ignored
-/// [TemplateItemIgnore].
+/// [TemplateItemHide].
 ///
 /// The template has a list of [sortProperties] that can be used to sort
 /// the records and a list of [identifierProperties] that are used to identify
@@ -83,7 +108,7 @@ class RecordTemplate {
 
   RecordTemplate(CsvData data) {
     for (final propertyName in data.propertyNames) {
-      items.add(TemplateItemScalar(propertyName, propertyName, null));
+      items.add(TemplateItemScalar(propertyName, propertyName, null, ''));
 
       if (identifierProperties.isEmpty) {
         // Use first property as the identifier
@@ -96,127 +121,140 @@ class RecordTemplate {
   /// Create a template by loading it from a file.
 
   RecordTemplate.load(String specification) {
-    // Parse specification as CSV
+    try {
+      // Parse specification as CSV
 
-    final data = CsvToListConverter(eol: '\n', shouldParseNumbers: false)
-        .convert(specification);
+      final data = CsvToListConverter(
+              eol: '\n', shouldParseNumbers: false, allowInvalid: false)
+          .convert(specification);
 
-    // Ignore header row
-    // - column name
-    // - label
-    // - enumeration
-    // - notes
+      // Ignore header row
+      // - column name
+      // - label
+      // - enumeration
+      // - notes
 
-    // Extract template items from all the other rows
+      // Extract template items from all the other rows
 
-    String groupLabel;
-    List<TemplateItemScalar> groupItems;
-    var lineNum = 1;
+      String groupLabel;
+      List<TemplateItemScalar> groupItems;
+      var lineNum = 1;
 
-    if (1 < data.length) {
-      for (final row in data.getRange(1, data.length)) {
-        lineNum++;
+      if (1 < data.length) {
+        for (final row in data.getRange(1, data.length)) {
+          lineNum++;
 
-        final displayText = (row.isNotEmpty) ? row[0].trim() : '';
-        final propertyName = (row.length >= 2) ? row[1].trim() : '';
-        final enumStr = (row.length >= 3) ? row[2].trim() : '';
-        // 4th column is for comments
+          final displayText = (row.isNotEmpty) ? row[0].trim() : '';
+          final propertyName = (row.length >= 2) ? row[1].trim() : '';
+          final enumStr = (row.length >= 3) ? row[2].trim() : '';
+          final notes = (row.length >= 4) ? row[3].trim() : '';
 
-        if (4 < row.length) {
-          throw TemplateException(lineNum, 'too many fields in row');
-        }
-
-        final enumerations = _parseEnum(lineNum, enumStr);
-
-        if (displayText.startsWith('#')) {
-          // Comment row: ignore
-
-          if (displayText == '#TITLE' || displayText == '#UNUSED') {
-            throw TemplateException(
-                lineNum, 'old template syntax: change #COMMAND to _COMMAND');
+          if (4 < row.length) {
+            throw TemplateException('too many fields in row', lineNum);
           }
-        } else if (displayText.startsWith('_')) {
-          // Command row
-          _processCommand(lineNum, displayText, propertyName, enumerations);
-        } else if (propertyName.isNotEmpty || displayText.isNotEmpty) {
-          // Template entry row
 
-          if (groupItems == null) {
-            if (propertyName.isNotEmpty) {
-              // Singular item
+          if (displayText.startsWith('#')) {
+            // Comment row: ignore
 
-              final item =
-                  TemplateItemScalar(propertyName, displayText, enumerations);
-
-              items.add(item);
-            } else {
-              // Start of group
-              groupLabel = displayText;
-              groupItems = [];
+            if (displayText == '#TITLE' || displayText == '#UNUSED') {
+              throw TemplateException(
+                  'old template syntax: change #COMMAND to _COMMAND', lineNum);
             }
           } else {
-            // Add to group
-            final item =
-                TemplateItemScalar(propertyName, displayText, enumerations);
-            groupItems.add(item);
-          }
-        } else {
-          // Blank row
+            // Not a comment
 
-          if (enumerations != null) {
-            throw TemplateException(lineNum, 'enumeration without property');
-          }
+            final enumerations = _parseEnum(lineNum, enumStr);
 
-          if (groupItems != null) {
-            // Complete the group
-            items.add(
-                TemplateItemGroup(groupLabel ?? 'Unnamed group', groupItems));
-            groupItems = null;
-          }
-        }
+            if (displayText.startsWith('_')) {
+              // Command row
+              _processCommand(
+                  lineNum, displayText, propertyName, enumerations, notes);
+            } else if (propertyName.isNotEmpty || displayText.isNotEmpty) {
+              // Template entry row
+
+              if (groupItems == null) {
+                if (propertyName.isNotEmpty) {
+                  // Singular item
+
+                  final item = TemplateItemScalar(
+                      propertyName, displayText, enumerations, notes);
+
+                  items.add(item);
+                } else {
+                  // Start of group
+                  groupLabel = displayText;
+                  groupItems = [];
+                }
+              } else {
+                // Add to group
+                final item = TemplateItemScalar(
+                    propertyName, displayText, enumerations, notes);
+                groupItems.add(item);
+              }
+            } else {
+              // Blank row
+
+              if (enumerations != null) {
+                throw TemplateException(
+                    'enumeration without property', lineNum);
+              }
+
+              if (groupItems != null) {
+                // Complete the group
+                items.add(TemplateItemGroup(
+                    groupLabel ?? 'Unnamed group', groupItems));
+                groupItems = null;
+              }
+            }
+          } // not a comment
+        } // for all non-header rows
+      } // if has non-header rows
+
+      if (groupItems != null) {
+        // Complete the last group
+        items.add(TemplateItemGroup(groupLabel ?? 'Unnamed group', groupItems));
+        groupItems = null;
       }
-    }
 
-    if (groupItems != null) {
-      // Complete the last group
-      items.add(TemplateItemGroup(groupLabel ?? 'Unnamed group', groupItems));
-      groupItems = null;
-    }
-
-    // Make sure there is at least one identifier property to use
-
-    if (identifierProperties.isEmpty) {
-      // Default to first property as the identifier property
-
-      for (final item in items) {
-        if (item is TemplateItemScalar) {
-          identifierProperties.add(item.propertyName);
-          break;
-        } else if (item is TemplateItemIgnore) {
-          identifierProperties.add(item.propertyName);
-          break;
-        }
-      }
+      // Make sure there is at least one identifier property to use
 
       if (identifierProperties.isEmpty) {
-        throw TemplateException(lineNum, 'no identifier column');
+        // Default to first property as the identifier property
+
+        for (final item in items) {
+          if (item is TemplateItemScalar) {
+            identifierProperties.add(item.propertyName);
+            break;
+          } else if (item is TemplateItemHide) {
+            identifierProperties.add(item.propertyName);
+            break;
+          }
+        }
+
+        if (identifierProperties.isEmpty) {
+          throw TemplateException('no identifier column', lineNum);
+        }
       }
+    } on FormatException catch (e) {
+      throw TemplateException('invalid CSV: ${e.message}');
     }
   }
 
   //----------------
 
   void _processCommand(int lineNum, String command, String param,
-      Map<String, String> enumerations) {
+      Map<String, String> enumerations, String notes) {
     if (command == '_TITLE') {
       title = param;
     } else if (command == '_SUBTITLE') {
       subtitle = param;
-    } else if (command == '_UNUSED') {
-      items.add(TemplateItemIgnore(param, enumerations));
+    } else if (command == '_OTHER') {
+      items.add(TemplateItemOther(param, enumerations, notes));
+    } else if (command == '_HIDE') {
+      items.add(TemplateItemHide(param, enumerations, notes));
     } else if (command == '_SORT') {
       if (sortProperties.contains(param)) {
-        throw TemplateException(lineNum, 'duplicate sort property: $param');
+        throw TemplateException('duplicate sort property: $param', lineNum);
       }
       sortProperties.add(param);
     } else if (command == '_IDENTIFIER') {
@@ -224,7 +262,7 @@ class RecordTemplate {
     } else if (command == '_SHOW') {
       _processCommandShow(lineNum, command, param);
     } else {
-      throw TemplateException(lineNum, 'unknown command: $command');
+      throw TemplateException('unknown command: $command', lineNum);
     }
   }
 
@@ -258,7 +296,7 @@ class RecordTemplate {
           break;
 
         default:
-          throw TemplateException(lineNum, 'unknown value in _SHOW: $param');
+          throw TemplateException('unknown value in _SHOW: $param', lineNum);
       }
     }
   }
@@ -305,11 +343,11 @@ class RecordTemplate {
         final label = pair.substring(equalsIndex + 1).trim();
 
         if (result.containsKey(key)) {
-          throw TemplateException(lineNum, 'duplicate key in enum: $key');
+          throw TemplateException('duplicate key in enum: $key', lineNum);
         }
         result[key] = label;
       } else {
-        throw TemplateException(lineNum, 'bad enum missing equals: $pair');
+        throw TemplateException('bad enum missing equals: $pair', lineNum);
       }
     }
 
@@ -323,13 +361,13 @@ class RecordTemplate {
     final usedColumns = <String>{};
 
     for (final item in items) {
-      if (item is TemplateItemScalar) {
+      if (item is TemplateItemPropertyBase) {
         usedColumns.add(item.propertyName);
       } else if (item is TemplateItemGroup) {
         for (final member in item.members) {
           usedColumns.add(member.propertyName);
         }
-      } else if (item is TemplateItemIgnore) {
+      } else if (item is TemplateItemHide) {
         usedColumns.add(item.propertyName);
       }
     }

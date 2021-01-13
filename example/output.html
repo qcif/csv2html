@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style type="text/css">
+
+body {
+  font-family: Calibri, Helvetica, sans-serif;
+}
+
+p.subtitle {
+  margin: 0;
+  font-size: larger;
+  font-weight: bold;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: blue;
+}
+
+div.toc {
+  margin: 4ex 0;
+}
+.toc table {
+  border-collapse: collapse;
+}
+.toc tr:hover {
+  background: #eee;
+}
+
+div.record {
+  margin: 2ex 0 4ex 0;
+}
+span.projectName {
+  font-size: smaller;
+}
+span.gp {
+  color: #666;
+}
+span.gp::after { content: ": " }
+
+div.other > h3:after {
+  content: " (other property)";
+  color: green;
+}
+div.hide > h3:after {
+  content: " (hidden property)";
+  color: orange;
+}
+div.unexpected > h3:after {
+  content: " (unexpected property)";
+  color: red;
+}
+
+.properties table {
+  border-collapse: collapse;
+}
+.properties tr:hover {
+  background: #eee;
+}
+h3.unused::before { content: 'Unused property: ' }
+
+th {
+  white-space: nowrap;
+  vertical-align: top;
+  text-align: right;
+  padding-right: 0.5em;
+  font-weight: normal;
+  color: #666;
+}
+
+/* Property summaries */
+
+div.property > h3 {}
+div.normal-property > h3 {}
+div.other-property > h3::after { content: " (not used in records)"; color: green; }
+div.hidden-property > h3::after { content: " (hidden)"; color: orange; }
+div.unexpected-property > h3::after { content: " (not in template)"; color: red; }
+
+/* Property index */
+
+li.property {}
+li.normal-property {}
+li.other-property { color: gray; }
+li.hidden-property { color: orange; }
+li.unexpected-property { color: red; }
+
+/* Footer */
+
+p.timestamp {
+  margin: 4ex 0;
+  text-align: center;
+  font-size: smaller;
+  color: #666;
+}
+
+@media print {
+  div.toc {page-break-after: always;}
+  div.record {page-break-after: always;}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>Example output produced by csv2html</h1>
+<p class="subtitle">Using template.csv on data.csv</p>
+</header>
+
+<div class="toc">
+<h2>Contents</h2>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+</tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+</tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+</tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+</tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+</tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+</tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+</tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+</tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+</tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+</tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+</tr>
+</table>
+</div>
+
+<h2>Records</h2>
+
+<div class="record" id="r6">
+<h3>John Barnett</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Barnett</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Barnett</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p7">State</a></span><span title="CA">California</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+<div class="record" id="r7">
+<h3>John Bigboote</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Bigboote</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Bigboote</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p5">Street</a></span><span>1 Yoyodyne Drive</span><br>
+<span class="gp"><a href="#p6">City</a></span><span>Trenton</span><br>
+<span class="gp"><a href="#p7">State</a></span><span title="NJ">New Jersey</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+<div class="record" id="r3">
+<h3>John Emdall</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Emdall</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Emdall</td></tr>
+</table>
+</div>
+
+<div class="record" id="r4">
+<h3>John Gant</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Gant</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Gant</td></tr>
+</table>
+</div>
+
+<div class="record" id="r11">
+<h3>John Gomez</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Gomez</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Gomez</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p5">Street</a></span><span>1 Yoyodyne Drive</span><br>
+<span class="gp"><a href="#p6">City</a></span><span>Trenton</span><br>
+<span class="gp"><a href="#p7">State</a></span><span title="NJ">New Jersey</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+<div class="record" id="r10">
+<h3>John O'Connor</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John O'Connor</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>O'Connor</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p5">Street</a></span><span>1 Yoyodyne Drive</span><br>
+<span class="gp"><a href="#p6">City</a></span><span>Trenton</span><br>
+<span class="gp"><a href="#p7">State</a></span><span title="NJ">New Jersey</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+<div class="record" id="r5">
+<h3>John Parker</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Parker</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Parker</td></tr>
+</table>
+</div>
+
+<div class="record" id="r12">
+<h3>John Smallberries</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Smallberries</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Smallberries</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p5">Street</a></span><span>1 Yoyodyne Drive</span><br>
+<span class="gp"><a href="#p6">City</a></span><span>Trenton</span><br>
+<span class="gp"><a href="#p7">State</a></span><span title="NJ">New Jersey</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+<div class="record" id="r2">
+<h3>John Valuk</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Valuk</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Valuk</td></tr>
+</table>
+</div>
+
+<div class="record" id="r8">
+<h3>John Whorfin</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Whorfin</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Whorfin</td></tr>
+</table>
+</div>
+
+<div class="record" id="r9">
+<h3>John Ya Ya</h3>
+<table>
+<tr><th><a href="#p4">Name</a></th><td>John Ya Ya</td></tr>
+<tr><th><a href="#p2">Given name</a></th><td>John</td></tr>
+<tr><th><a href="#p3">Family name</a></th><td>Ya Ya</td></tr>
+<tr><th>Address</th>
+<td><span class="gp"><a href="#p5">Street</a></span><span>1 Yoyodyne Drive</span><br>
+<span class="gp"><a href="#p6">City</a></span><span>Trenton</span><br>
+<span class="gp"><a href="#p7">State</a></span><span title="NJ">New Jersey</span><br>
+</td>
+</tr>
+</table>
+</div>
+
+</table>
+</div>
+
+<div class="properties">
+<h2>Properties</h2>
+
+<div class="property normal-property">
+<h3 id="p4">displayname</h3>
+<p class="notes">Preferred display format</p>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td>John Barnett</td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>John Bigboote</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td>John Emdall</td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td>John Gant</td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>John Gomez</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>John O'Connor</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td>John Parker</td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>John Smallberries</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td>John Valuk</td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td>John Whorfin</td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>John Ya Ya</td></tr>
+</table>
+</div>
+
+<div class="property normal-property">
+<h3 id="p2">givenname</h3>
+<p class="notes">Person's given name</p>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td>John</td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>John</td></tr>
+</table>
+</div>
+
+<div class="property normal-property">
+<h3 id="p3">surname</h3>
+<p class="notes">Person's surname</p>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td>Barnett</td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>Bigboote</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td>Emdall</td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td>Gant</td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>Gomez</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>O'Connor</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td>Parker</td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>Smallberries</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td>Valuk</td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td>Whorfin</td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>Ya Ya</td></tr>
+</table>
+</div>
+
+<div class="property normal-property">
+<h3 id="p5">street</h3>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>1 Yoyodyne Drive</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>1 Yoyodyne Drive</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>1 Yoyodyne Drive</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>1 Yoyodyne Drive</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>1 Yoyodyne Drive</td></tr>
+</table>
+</div>
+
+<div class="property normal-property">
+<h3 id="p6">city</h3>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>Trenton</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>Trenton</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>Trenton</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>Trenton</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>Trenton</td></tr>
+</table>
+</div>
+
+<div class="property normal-property">
+<h3 id="p7">state</h3>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td title="CA">California</td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td title="NJ">New Jersey</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td title="NJ">New Jersey</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td title="NJ">New Jersey</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td title="NJ">New Jersey</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td></td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td title="NJ">New Jersey</td></tr>
+</table>
+</div>
+
+<div class="property unexpected-property">
+<h3 id="p1">id</h3>
+<table>
+<tr><th><a href="#r6">John Barnett</a></th>
+</th>
+<td>4</td></tr>
+<tr><th><a href="#r7">John Bigboote</a></th>
+</th>
+<td>5</td></tr>
+<tr><th><a href="#r3">John Emdall</a></th>
+</th>
+<td>1</td></tr>
+<tr><th><a href="#r4">John Gant</a></th>
+</th>
+<td>2</td></tr>
+<tr><th><a href="#r11">John Gomez</a></th>
+</th>
+<td>9</td></tr>
+<tr><th><a href="#r10">John O'Connor</a></th>
+</th>
+<td>8</td></tr>
+<tr><th><a href="#r5">John Parker</a></th>
+</th>
+<td>3</td></tr>
+<tr><th><a href="#r12">John Smallberries</a></th>
+</th>
+<td>10</td></tr>
+<tr><th><a href="#r2">John Valuk</a></th>
+</th>
+<td>0</td></tr>
+<tr><th><a href="#r8">John Whorfin</a></th>
+</th>
+<td>6</td></tr>
+<tr><th><a href="#r9">John Ya Ya</a></th>
+</th>
+<td>7</td></tr>
+</table>
+</div>
+
+</div> <!-- properties -->
+
+<div class="index">
+<h2>Index</h2>
+<ol>
+<li class="normal-property"><a href="#p6">city</a></li>
+<li class="normal-property"><a href="#p4">displayname</a></li>
+<li class="normal-property"><a href="#p2">givenname</a></li>
+<li class="unexpected-property"><a href="#p1">id</a></li>
+<li class="normal-property"><a href="#p7">state</a></li>
+<li class="normal-property"><a href="#p5">street</a></li>
+<li class="normal-property"><a href="#p3">surname</a></li>
+</ol>
+</div>
+
+<footer>
+<p class="timestamp">2021-01-13</p>
+</footer>
+
+</body>
+</html>
+
+<!--
+timestamp: 2021-01-13T07:30:49.000Z
+generated: 2021-01-13T07:46:33.836604Z
+-->

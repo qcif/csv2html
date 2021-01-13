@@ -21,7 +21,7 @@ void badHeader() {
 
       test(name, () {
         try {
-          final d = CsvData.load(input);
+          CsvData.load(input);
           fail('did not throw exception');
         } on CsvDataException catch (e) {
           expect(e.lineNum, equals(1));
@@ -73,7 +73,7 @@ foo,bar,baz
 
     test('bad', () {
       try {
-        final d = CsvData.load('''
+         CsvData.load('''
 foo,bar,baz
 1,2,3
 4,5,6,7

@@ -1,13 +1,13 @@
-id,givenname,surname,displayname,street,city,state,race
-0,John,Valuk,John Valuk,,,,b
-1,John,Emdall,John Emdall,,,,b
-2,John,Gant,John Gant,,,,b
-3,John,Parker,John Parker,,,,b
-4,John,Barnett,John Barnett,,,CA,b
-5,John,Bigboote,John Bigboote,1 Yoyodyne Drive,Trenton,NJ,r
-6,John,Whorfin,John Whorfin,,,,r
-7,John,Ya Ya,John Ya Ya,1 Yoyodyne Drive,Trenton,NJ,r
-8,John,O'Connor,John O'Connor,1 Yoyodyne Drive,Trenton,NJ,r
-9,John,Gomez,John Gomez,1 Yoyodyne Drive,Trenton,NJ,r
-10,John,Smallberries,John Smallberries,1 Yoyodyne Drive,Trenton,NJ,r
+id,givenname,surname,displayname,street,city,state,social_security
+0,John,Valuk,John Valuk,,,,1234567890
+1,John,Emdall,John Emdall,,,,1234567891
+2,John,Gant,John Gant,,,,1234567892
+3,John,Parker,John Parker,,,,1234567893
+4,John,Barnett,John Barnett,,,CA,1234567894
+5,John,Bigboote,John Bigboote,1 Yoyodyne Drive,Trenton,NJ,1234567895
+6,John,Whorfin,John Whorfin,,,,1234567896
+7,John,Ya Ya,John Ya Ya,1 Yoyodyne Drive,Trenton,NJ,1234567897
+8,John,O'Connor,John O'Connor,1 Yoyodyne Drive,Trenton,NJ,1234567898
+9,John,Gomez,John Gomez,1 Yoyodyne Drive,Trenton,NJ,1234567899
+10,John,Smallberries,John Smallberries,1 Yoyodyne Drive,Trenton,NJ,1234567900
 

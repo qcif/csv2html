@@ -1,6 +1,10 @@
 # CSV to HTML converter
 
-Converts records from a Comma Separated Variables (CSV) file into HTML.
+Formats a Comma Separated Variables (CSV) data file into HTML.  Each
+row is a record and the columns are properties.  A template is used to
+control how the records and properties are displayed.
+
+See the _examples_ directory for an example generated HTML file.
 
 ## Installing
 
@@ -41,6 +45,10 @@ Options:
 
 - `-t FILE` or `--template FILE` specifies the template to use.
 
+- `-e` or `--exclude-other` exclude other properties from property summary.
+
+- `-i` or `--include-hidden` include hidden properties in property summary.
+
 - `-q` or `--quiet` do not print out warnings.
 
 - `-h` or `--help`  show a brief help message and exits.
@@ -71,16 +79,20 @@ whitespace removed.
 
 ### HTML output
 
-The HTML produced contains to main sections: records and properties.
+The HTML produced contains two main sections: records and properties.
 
-The records show every record from the input data. That is, the values
-from a row in the input CSV. By default, a table of contents is shown
-before the records, with links to each of the records.
+The records section show every record from the input data. That is,
+the values from a row in the input CSV. By default, a table of
+contents is also shown before the records, with links to each of the
+records.
 
-The properties show every property from the input data. That is, the
-values from a column in the input CSV. By default, an index of the
-properties is shown after the properties, with links to each of the
-properties.
+The properties section show every property from the input data. That
+is, the values from a column in the input CSV. By default, an index of
+the properties is shown after the properties, with links to each of
+the properties. By default, other properties (those indicated by
+`_OTHER`) are included and hidden properties (those indicated by
+`_HIDE`) are not: that behaviour can be changed by using command line
+options.
 
 ## Templates
 
@@ -111,17 +123,13 @@ Rows for template items contain up to four columns, representing:
 - enumeration; and
 - notes.
 
-The notes column is always ignored. It can be used for comments about
-the template item.
-
 The order in which the template items appear in the template is the
 order in which they are shown in the record.
 
 Templates should have a template item for every property in the data
-file, or indicate the property is ignored.  A warning will be given
-for properties that appear in the data but not in the template. The
-warning can be suppressed by indicating the property is ignored with
-the _UNUSED command.
+file, or identify the property with either the _OTHER or _HIDE
+commands.  A warning will be given for properties that appear in the
+data but not in the template.
 
 #### Scalars
 
@@ -227,20 +235,35 @@ commands. Each is displayed in its own column.
 If no identifiers are defined in the template, the first scalar
 property in the template is used as the identifier.
 
-#### _UNUSED
+#### _OTHER
 
-The property named in the parameter is not displayed in the records.
+The property named in the parameter is not displayed in the records,
+but is included in the properties section.
+
+But it can be excluded from the properties section with the
+`--exclude-other` command line option. That option makes this behave
+like _HIDE.
+
+```
+_OTHER,  isbn
+_OTHER,  dimensions
+```
+
+#### _HIDE
+
+The property named in the paramater is not displayed at all (neither
+in the records section or the properties section).
+
+But it can be included in the properties section with the
+`--include-hidden` command line option. That option makes this behave
+like _OTHER.
+
+```
+_HIDE,  internal_price
+```
+
 This command is used to indicate the template knows about the
 property, but is deliberately not displaying it in the record.
-
-```
-_UNUSED,  code
-_UNUSED,  timestamp
-```
-
-However, it will still appear in the variables section.  Also, any
-properties that are not mentioned in the template produce a warning
-and are included in the variables section.
 
 #### _SHOW
 
@@ -278,7 +301,7 @@ Display text,   Property,       Enumeration,    Notes
 # An example template
 
 _TITLE,         My Books
-_SUBTITLE,      Some books from my library
+_SUBTITLE,      An example
 
 _SORT,          title
 _SORT,          subtitle
@@ -292,15 +315,12 @@ Author,         ,               ,               Start of a group
 Given name,     author_givenname
 Family name,    author_familyname
 
-ISBN,           isbn
 Publisher,      publisher_name
 Format,         format,         , hc=Hard cover;pb=Paperback
-_UNUSED,        id
-_UNUSED,        timestamp
+_OTHER,         isbn
+_OTHER,         dimensions
+_HIDE,          internal_price
 ```
-
-See the _examples_ directory for another example.
-
 
 ### Default template
 

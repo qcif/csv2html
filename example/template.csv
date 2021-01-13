@@ -1,22 +1,33 @@
 Display text,  Property name,   Enumeration, Notes
 
-_TITLE,		Example Address book
-_SUBTITLE,	Using the example csv2html template
+_TITLE,		Example output produced by csv2html
+_SUBTITLE,	Using template.csv on data.csv
 
-_SORT,          surname
+# Properties used to sort the records for the records section.
+
+_SORT,          surname,
 _SORT,          givenname
+
+# Properties is used for the links to the records.
 
 _IDENTIFIER,    displayname
 
-Name,           displayname
-Given name,     givenname
-Family name,    surname
+# Properties that make up the records.
+
+Name,           displayname,       ,Preferred display format
+Given name,     givenname,         ,Person's given name
+Family name,    surname,           ,Person's surname
 
 Address,
 Street,         street
 City,           city
 State,          state,	NJ=New Jersey; NY=New York; CA=California
 
-Side,		race,    r=Red; b=Black
+# Properties not in the records, but will appear in properties section
+# (unless --exclude-other).
 
-_UNUSED,        id
+#_OTHER,        id
+
+# Properties that won't appear anywhere (unless --include-hidden).
+
+_HIDE,   social_security
