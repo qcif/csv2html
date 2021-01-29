@@ -60,7 +60,7 @@ class Formatter {
 
   /// The template to interpret the CSV data.
 
-  final RecordTemplate _template;
+  final Template _template;
 
   /// Exclude other properties.
   ///
@@ -93,7 +93,8 @@ class Formatter {
   /// the caller can pass in the last modified date of the CSV data as the
   /// timestamp to display.
 
-  List<NoEnumeration> toHtml(CsvData data, String defaultTitle, IOSink buf,
+  List<NoEnumeration> toHtml(
+      CsvData data, String defaultTitle, String programVersion, IOSink buf,
       {DateTime timestamp}) {
     final propertyIds = _generatePropertyIds(data);
 
@@ -103,7 +104,7 @@ class Formatter {
 
     // Generate HTML
 
-    _showHead(buf, defaultTitle);
+    _showHead(buf, defaultTitle, programVersion, timestamp: timestamp);
 
     if (_template.showRecords) {
       if (_template.showRecordsContents) {
@@ -149,7 +150,7 @@ class Formatter {
     // Check all template items refer to properties that exist in the data
 
     for (final item in _template.items) {
-      if (item is TemplateItemPropertyBase) {
+      if (item is TemplateItemProperty) {
         if (!propertyId.containsKey(item.propertyName)) {
           throw PropertyNotInDataException(item.propertyName);
         }
@@ -187,11 +188,22 @@ class Formatter {
 
   //----------------
 
-  void _showHead(IOSink buf, String defaultTitle) {
+  void _showHead(IOSink buf, String defaultTitle, String programVersion,
+      {DateTime timestamp}) {
     final title = _template.title.isNotEmpty ? _template.title : defaultTitle;
+
+    final _timestamp = timestamp != null
+        ? 'timestamp: ${hText(timestamp.toUtc().toIso8601String().substring(0, 19))}Z\n'
+        : '';
 
     buf.write('''
 <!DOCTYPE html>
+
+<!--
+generator: csv2html $programVersion <https://github.com/qcif/csv2html>
+generated: ${hText(DateTime.now().toUtc().toIso8601String().substring(0, 19))}Z
+$_timestamp-->
+
 <html>
 <head>
 <meta charset="utf-8">
@@ -234,10 +246,10 @@ div.record {
 span.projectName {
   font-size: smaller;
 }
-span.gp {
+span.groupProp {
   color: #666;
 }
-span.gp::after { content: ": " }
+span.groupProp::after { content: ": " }
 
 div.other > h3:after {
   content: " (other property)";
@@ -341,11 +353,11 @@ p.timestamp {
 
       buf.write('<th>');
       if (_template.showRecords) {
-        buf.write('<a href="#${record.identifier}">$valueHtml</a></th>\n');
+        buf.write('<a href="#${record.identifier}">$valueHtml</a>');
       } else {
         buf.write(valueHtml);
       }
-      buf.write('</th>\n');
+      buf.write('</th>');
     }
   }
 
@@ -398,7 +410,7 @@ p.timestamp {
     buf.write('<table>\n');
 
     for (final item in _template.items) {
-      if (item is TemplateItemScalar) {
+      if (item is TemplateItemActive) {
         _showRecordSingular(item, record, propertyId, buf, warnings);
       } else if (item is TemplateItemGroup) {
         _showRecordGroup(item, record, propertyId, buf);
@@ -413,7 +425,7 @@ p.timestamp {
   //----------------
 
   void _showRecordSingular(
-      TemplateItemScalar item,
+      TemplateItemActive item,
       Record record,
       Map<String, String> propertyId,
       IOSink buf,
@@ -466,18 +478,19 @@ p.timestamp {
     var started = false;
 
     for (final member in item.members) {
-      if (member is TemplateItemScalar) {
+      if (member is TemplateItemActive) {
         // Show property in the record
         final value = entry[member.propertyName];
 
         if (value.isNotEmpty) {
           if (!started) {
-            buf.write('<tr><th>${hText(item.displayText)}</th>\n<td>');
+            buf.write('<tr><th>${hText(item.displayText)}</th>\n'
+                '<td class="group">\n');
             started = true;
           }
 
           if (member.displayText.isNotEmpty) {
-            buf.write('<span class="gp">');
+            buf.write('<span class="groupProp">');
 
             if (_template.showProperties) {
               final id = propertyId[member.propertyName];
@@ -528,7 +541,7 @@ p.timestamp {
     // Summaries for all properties mentioned in the template
 
     for (final item in _template.items) {
-      if (item is TemplateItemPropertyBase) {
+      if (item is TemplateItemProperty) {
         // Display the property
 
         _propertySummaryForItem(
@@ -566,7 +579,7 @@ p.timestamp {
   //----------------
 
   void _propertySummaryForItem(
-      TemplateItemPropertyBase item,
+      TemplateItemProperty item,
       CsvData records,
       Map<String, String> propertyIds,
       IOSink buf,
@@ -577,7 +590,7 @@ p.timestamp {
     PropertyState state;
     bool include;
 
-    if (item is TemplateItemScalar) {
+    if (item is TemplateItemActive) {
       state = PropertyState.usedInRecord;
       include = true; // always include
 
@@ -664,8 +677,6 @@ p.timestamp {
   //----------------------------------------------------------------
 
   void _showFooter(IOSink buf, {DateTime timestamp}) {
-    // Visible footer
-
     buf.write('<footer>\n');
 
     if (timestamp != null) {
@@ -673,24 +684,7 @@ p.timestamp {
       buf.write('<p class="timestamp">${hText(ts)}</p>\n');
     }
 
-    buf.write('''
-</footer>
-
-</body>
-</html>
-
-<!--
-generator: csv2html <https://github.com/qcif/csv2html>
-generated: ${hText(DateTime.now().toUtc().toIso8601String())}
-''');
-
-    // Hidden timestamps
-
-    if (timestamp != null) {
-      buf.write('timestamp: ${hText(timestamp.toUtc().toIso8601String())}\n');
-    }
-
-    buf.write('-->\n');
+    buf.write('</footer>\n</body>\n</html>\n');
   }
 
   //================================================================
@@ -700,8 +694,14 @@ generated: ${hText(DateTime.now().toUtc().toIso8601String())}
   static final _htmlEscapeAttr = HtmlEscape(HtmlEscapeMode.attribute);
 
   /// Escape string for use in HTML attributes
+  ///
+  /// New lines U+000A and the Unicode "line separator" U+2028 character are
+  /// represented as `<br>` line breaks.
 
-  static String hText(String s) => _htmlEscapeText.convert(s);
+  static String hText(String s) => _htmlEscapeText
+      .convert(s)
+      .replaceAll('\n', '<br>\n')
+      .replaceAll('\u2028', '<br>\n');
 
   /// Escape string for use in HTML content
 

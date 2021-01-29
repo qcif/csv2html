@@ -42,9 +42,9 @@ class Config {
         ..addOption(_oParamOutput,
             abbr: 'o', help: 'output file', valueHelp: 'FILE')
         ..addFlag(_oParamExcludeOther,
-            abbr: 'e', help: 'exclude other properties (_OTHER)')
+            abbr: 'e', negatable: false, help: 'exclude other properties (_OTHER)')
         ..addFlag(_oParamIncludeHidden,
-            abbr: 'i', help: 'include hidden properties (_HIDE)')
+            abbr: 'i', negatable: false, help: 'include hidden properties (_HIDE)')
         ..addFlag(_oParamVersion,
             help: 'display version information and exit', negatable: false)
         ..addFlag(_oParamQuiet,
@@ -56,7 +56,7 @@ class Config {
 
       // ignore: avoid_as
       if (results[_oParamHelp] as bool) {
-        stdout.write('Usage: $_name [options]\n${parser.usage}\n');
+        stdout.write('Usage: $_name [options] csv_data_file\n${parser.usage}\n');
         exit(0);
       }
 
@@ -149,14 +149,14 @@ void main(List<String> arguments) {
 
     final defaultTitle = p.split(config.dataFilename).last;
 
-    RecordTemplate template;
+    Template template;
 
     final tName = config.templateFilename;
     if (tName != null) {
       final f = File(tName);
-      template = RecordTemplate.load(f.readAsStringSync());
+      template = Template.load(f.readAsStringSync());
     } else {
-      template = RecordTemplate(data);
+      template = Template(data);
     }
 
     // Output destination
@@ -169,7 +169,7 @@ void main(List<String> arguments) {
     final fmt = Formatter(template,
         excludeOther: config.excludeOther, includeHidden: config.includeHidden);
 
-    final warnings = fmt.toHtml(data, defaultTitle, out,
+    final warnings = fmt.toHtml(data, defaultTitle, _version, out,
         timestamp: File(config.dataFilename).lastModifiedSync());
 
     // Show warnings

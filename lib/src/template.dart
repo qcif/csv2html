@@ -2,13 +2,23 @@ part of csv_data;
 
 //################################################################
 /// Base class for a template item.
+///
+/// There are two types of template items: properties and groups,
+/// corresponding to [TemplateItemProperty] and [TemplateItemGroup].
 
 abstract class TemplateItem {}
 
 //################################################################
+/// Base class for a property template item.
+///
+/// There are three types of property template items:
+///
+/// - properties used in the record (either at the top level or in a group);
+/// - other properties; and
+/// - hidden properties.
 
-class TemplateItemPropertyBase extends TemplateItem {
-  TemplateItemPropertyBase(this.propertyName, this.enumerations, this.notes);
+abstract class TemplateItemProperty extends TemplateItem {
+  TemplateItemProperty(this.propertyName, this.enumerations, this.notes);
 
   // Name of the property
   final String propertyName;
@@ -23,12 +33,24 @@ class TemplateItemPropertyBase extends TemplateItem {
 //################################################################
 /// Item to indicate a single property.
 
-class TemplateItemScalar extends TemplateItemPropertyBase {
-  TemplateItemScalar(String propertyName, this.displayText,
+class TemplateItemActive extends TemplateItemProperty {
+  TemplateItemActive(String propertyName, this.displayText,
       Map<String, String> enumerations, String notes)
       : super(propertyName, enumerations, notes);
 
   final String displayText;
+}
+
+//################################################################
+/// Item to indicate a property is not used in the records.
+///
+/// These properties are not included in the records section, but they are
+/// included in the properties section.
+
+class TemplateItemOther extends TemplateItemProperty {
+  TemplateItemOther(
+      String propertyName, Map<String, String> enumerations, String notes)
+      : super(propertyName, enumerations, notes);
 }
 
 //################################################################
@@ -38,20 +60,8 @@ class TemplateItemScalar extends TemplateItemPropertyBase {
 /// normally included in the properties section. But they can be included
 /// in the properties section, if requested.
 
-class TemplateItemHide extends TemplateItemPropertyBase {
+class TemplateItemHide extends TemplateItemProperty {
   TemplateItemHide(
-      String propertyName, Map<String, String> enumerations, String notes)
-      : super(propertyName, enumerations, notes);
-}
-
-//################################################################
-/// Item to indicate a property is not used in the records.
-///
-/// These properties are not included in the records section, but they are
-/// included in the properties section.
-
-class TemplateItemOther extends TemplateItemPropertyBase {
-  TemplateItemOther(
       String propertyName, Map<String, String> enumerations, String notes)
       : super(propertyName, enumerations, notes);
 }
@@ -64,7 +74,7 @@ class TemplateItemGroup extends TemplateItem {
 
   final String displayText;
 
-  final List<TemplateItemPropertyBase> members;
+  final List<TemplateItemProperty> members;
 }
 
 //################################################################
@@ -73,7 +83,14 @@ class TemplateItemGroup extends TemplateItem {
 class TemplateException implements Exception {
   TemplateException(this.message, [this.lineNum]);
 
+  /// The line from the template file causing the problem.
+  ///
+  /// Null if the line cannot be identified.
+
   final int lineNum;
+
+  /// Error message.
+
   final String message;
 
   @override
@@ -81,14 +98,15 @@ class TemplateException implements Exception {
 }
 
 //################################################################
-/// Template for a record.
+/// Template for displaying a CSV file.
 ///
 /// A template identifies properties and how they are to be interpreted.
 ///
 /// The main part of a template is an ordered list of [items]. These identify
-/// individual properties [TemplateItemScalar], groups of properties
-/// [TemplateItemGroup], or properties that are to be ignored
-/// [TemplateItemHide].
+/// individual properties [TemplateItemActive], groups of properties
+/// [TemplateItemGroup], properties that are to be displayed but are not a part
+/// of the record [TemplateItemOther], and properties that are not to be
+/// displayed [TemplateItemHide].
 ///
 /// The template has a list of [sortProperties] that can be used to sort
 /// the records and a list of [identifierProperties] that are used to identify
@@ -96,7 +114,7 @@ class TemplateException implements Exception {
 ///
 /// The template also specifies a [title] and [subtitle].
 
-class RecordTemplate {
+class Template {
   //================================================================
 
   //----------------------------------------------------------------
@@ -106,9 +124,9 @@ class RecordTemplate {
   /// (in the same order), and the first property as the identifying property.
   /// There are no sort properties.
 
-  RecordTemplate(CsvData data) {
+  Template(CsvData data) {
     for (final propertyName in data.propertyNames) {
-      items.add(TemplateItemScalar(propertyName, propertyName, null, ''));
+      items.add(TemplateItemActive(propertyName, propertyName, null, ''));
 
       if (identifierProperties.isEmpty) {
         // Use first property as the identifier
@@ -120,7 +138,7 @@ class RecordTemplate {
   //----------------------------------------------------------------
   /// Create a template by parsing the CSV representation of it.
 
-  RecordTemplate.load(String templateCsv) {
+  Template.load(String templateCsv) {
     try {
       // Parse specification as CSV
 
@@ -137,10 +155,10 @@ class RecordTemplate {
       // - enumeration
       // - notes
 
-      // Extract template items from all the other rows
+      // Extract template items and commands from all the other rows
 
       String groupLabel;
-      List<TemplateItemScalar> groupItems;
+      List<TemplateItemActive> groupItems;
       var lineNum = 1;
 
       if (1 < data.length) {
@@ -179,7 +197,7 @@ class RecordTemplate {
                 if (propertyName.isNotEmpty) {
                   // Singular item
 
-                  final item = TemplateItemScalar(
+                  final item = TemplateItemActive(
                       propertyName, displayText, enumerations, notes);
 
                   items.add(item);
@@ -190,7 +208,7 @@ class RecordTemplate {
                 }
               } else {
                 // Add to group
-                final item = TemplateItemScalar(
+                final item = TemplateItemActive(
                     propertyName, displayText, enumerations, notes);
                 groupItems.add(item);
               }
@@ -225,7 +243,7 @@ class RecordTemplate {
         // Default to first property as the identifier property
 
         for (final item in items) {
-          if (item is TemplateItemScalar) {
+          if (item is TemplateItemActive) {
             identifierProperties.add(item.propertyName);
             break;
           } else if (item is TemplateItemHide) {
@@ -244,6 +262,7 @@ class RecordTemplate {
   }
 
   //----------------
+  /// Parse a command.
 
   void _processCommand(int lineNum, String command, String param,
       Map<String, String> enumerations, String notes) {
@@ -270,6 +289,10 @@ class RecordTemplate {
   }
 
   //----------------
+  /// Parse the value provided to the _SHOW command.
+  ///
+  /// The value is a set of semicolon separated values, indicating which
+  /// sections and their contents/index to show.
 
   void _processCommandShow(int lineNum, String command, String param) {
     showRecords = false;
@@ -307,15 +330,28 @@ class RecordTemplate {
   //================================================================
   // Members
 
+  /// Display title.
+
   String title = '';
+
+  /// Display subtitle.
 
   String subtitle = '';
 
+  /// Properties used to sort the records.
+
   final List<String> sortProperties = [];
+
+  /// Properties used to identify a record.
 
   final List<String> identifierProperties = [];
 
+  /// The items making up the record.
+
   final List<TemplateItem> items = [];
+
+  //----------------
+  // The following booleans control which sections appear in the output.
 
   /// Show the records (and maybe the table of contents).
 
@@ -364,7 +400,7 @@ class RecordTemplate {
     final usedColumns = <String>{};
 
     for (final item in items) {
-      if (item is TemplateItemPropertyBase) {
+      if (item is TemplateItemProperty) {
         usedColumns.add(item.propertyName);
       } else if (item is TemplateItemGroup) {
         for (final member in item.members) {

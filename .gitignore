@@ -13,3 +13,9 @@ doc/api/
 
 # macOS files
 .DS_Store
+
+# Examples that won't be checked in
+
+example/output-exclude-other.html
+example/output-include-hidden.html
+example/output-no-template.html

@@ -78,20 +78,31 @@ class CsvData {
 
     // Extract property names from the header row
 
-    var column = 0;
-    for (final name in data.first.map((s) => s.trim())) {
-      column++;
-
-      if (name is String) {
-        if (name.isNotEmpty) {
-          propertyNames.add(name);
-        } else {
-          throw CsvDataException(1, 'column $column: blank property name');
-        }
+    final values = <String>[]; // first: get trimmed string values
+    for (final v in data.first.map((s) => s.trim())) {
+      if (v is String) {
+        values.add(v);
       } else {
         // This should never happen
         assert(false, 'property name is not a string');
       }
+    }
+
+    var column = 0; // second: use the non-blank values as names
+    while (column < values.length) {
+      final name = values[column];
+      if (name.isNotEmpty) {
+        propertyNames.add(name);
+      } else {
+        // Some CSV exports put blank values at the end of a row
+        // A blank value is only an error if there are non-blank fields after it
+        for (var x = column + 1; x < values.length; x++) {
+          if (values[x].isNotEmpty) {
+            throw CsvDataException(1, 'column $column: blank property name');
+          }
+        }
+      }
+      column++;
     }
 
     // Check all property names are unique

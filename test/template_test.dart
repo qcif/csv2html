@@ -20,7 +20,7 @@ void emptyTemplates() {
 
       test(name, () {
         try {
-          RecordTemplate.load(input);
+          Template.load(input);
           fail('did not throw exception');
         } on TemplateException catch (e) {
           expect(e.lineNum, equals(badRow));
@@ -35,7 +35,7 @@ void emptyTemplates() {
 void example() {
   group('readme example', () {
     test('readme', () {
-      final d = RecordTemplate.load('''
+      final d = Template.load('''
 # An example template
 
 _TITLE,         My Books
@@ -73,7 +73,7 @@ _HIDE,          internal_price
       expect(d.items.length, equals(8));
 
       final item = d.items[0];
-      if (item is TemplateItemScalar) {
+      if (item is TemplateItemActive) {
         expect(item.propertyName, equals('title'));
         expect(item.displayText, equals('Book title'));
         expect(item.enumerations, isNull);

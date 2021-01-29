@@ -5,12 +5,12 @@ help:
 	@echo "  all   - run csv2html to generate example HTML files"
 	@echo "  clean - delete all generated HTML files"
 
-OUTPUTS=output.html \
+EXTRA=\
   output-include-hidden.html \
   output-exclude-other.html \
   output-no-template.html
 
-all: ${OUTPUTS}
+all: output.html ${EXTRA}
 
 output.html: template.csv data.csv
 	../bin/csv2html.dart -o $@ -t template.csv data.csv
@@ -25,4 +25,4 @@ output-no-template.html: data.csv
 	../bin/csv2html.dart -o $@ data.csv
 
 clean:
-	rm -f ${OUTPUTS}
+	rm -f ${EXTRA}

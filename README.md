@@ -123,6 +123,13 @@ Rows for template items contain up to four columns, representing:
 - enumeration; and
 - notes.
 
+The notes will be displayed in the properties section of the HTML.
+
+The notes can contain multiple lines. If the field in the CSV starts
+and ends with a double-quote, there can be new line characters (0x0A)
+inside the value. Alternatively, the Unicode _line separator_
+character (U+2028) can also be used.
+
 The order in which the template items appear in the template is the
 order in which they are shown in the record.
 

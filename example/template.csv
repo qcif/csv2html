@@ -8,26 +8,28 @@ _SUBTITLE,	Using template.csv on data.csv
 _SORT,          surname,
 _SORT,          givenname
 
-# Properties is used for the links to the records.
+# Properties is used for link text to the records.
 
 _IDENTIFIER,    displayname
 
 # Properties that make up the records.
 
-Name,           displayname,       ,Preferred display format
-Given name,     givenname,         ,Person's given name
-Family name,    surname,           ,Person's surname
+Display name,   displayname,       , Full name for display purposes.
+Given name,     givenname,         , Person's given name
+Family name,    surname,           , Person's surname
 
 Address,
 Street,         street
 City,           city
-State,          state,	NJ=New Jersey; NY=New York; CA=California
+State,          state,	NJ=New Jersey; NY=New York; CA=California,"The state.
 
-# Properties not in the records, but will appear in properties section
-# (unless --exclude-other).
+This is an example of enumerations being used.
+It is also an example of a multi-line note."
+
+# Properties not in records, but in properties section (unless --exclude-other).
 
 #_OTHER,        id
 
-# Properties that won't appear anywhere (unless --include-hidden).
+# Properties that won't appear anywhere in the HTML (unless --include-hidden).
 
 _HIDE,   social_security
